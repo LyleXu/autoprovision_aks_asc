@@ -1,0 +1,17 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+
+pool:
+  name: mydesktop # here just used a self-hosted machine as the worker
+
+jobs:         
+  - job: create
+    steps:
+      - task: CmdLine@2
+        inputs:
+          script: 'az fidalgo environment create --project-name demo -g rg-fidalgo-dev -n $(environmentName) --environment-type dev --catalog-item-name $(catalogItemName) --deployment-parameters $(deployment-parameters)'

@@ -1,0 +1,6 @@
+name: demo1
+version: 1.0.0
+description: deploy ask, asc, vm, vnet, bastion
+engine:
+  type: ARM
+  templatePath: main.json

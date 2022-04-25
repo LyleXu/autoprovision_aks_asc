@@ -1,0 +1,1445 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.5.6.12127",
+      "templateHash": "6459785841224959774"
+    }
+  },
+  "parameters": {
+    "appAlias": {
+      "type": "string",
+      "defaultValue": "app1",
+      "metadata": {
+        "description": "The alias of the application"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "The location that the resource will be provisioned. Default is the current resource group"
+      }
+    },
+    "environment": {
+      "type": "string",
+      "defaultValue": "SD",
+      "allowedValues": [
+        "SD",
+        "QA",
+        "TR",
+        "VE",
+        "OL",
+        "BK",
+        "DR"
+      ],
+      "metadata": {
+        "description": "Environment. That will decide the resource details like size, capacity etc"
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {
+        "Environment": "SD",
+        "CostCenter": "1001201",
+        "Ower": "Mike"
+      },
+      "metadata": {
+        "description": "Tags that need to attach to the resource. Define the addtinal key value if required"
+      }
+    },
+    "vnetName": {
+      "type": "string",
+      "defaultValue": "[format('{0}vnet{1}{2}', parameters('appAlias'), toLower(parameters('environment')), uniqueString(parameters('location')))]",
+      "metadata": {
+        "description": "The name of the Virtual Network"
+      }
+    },
+    "ascAppSubnetName": {
+      "type": "string",
+      "defaultValue": "ascAppSubnet",
+      "metadata": {
+        "description": "the app subnet name of the Azure Spring Cloud"
+      }
+    },
+    "ascRuntimeSubnetName": {
+      "type": "string",
+      "defaultValue": "ascRuntimeSubnet",
+      "metadata": {
+        "description": "the runtime subnet name of the Azure Spring Cloud"
+      }
+    },
+    "bastionSubnetName": {
+      "type": "string",
+      "defaultValue": "AzureBastionSubnet",
+      "metadata": {
+        "description": "The bastion subnet name in the vnet"
+      }
+    },
+    "vmSubnetName": {
+      "type": "string",
+      "defaultValue": "vmSubnet",
+      "metadata": {
+        "description": "The virtual machine subnet name in the vnet"
+      }
+    },
+    "vnetAddressPrefixes": {
+      "type": "string",
+      "defaultValue": "10.4.0.0/16",
+      "metadata": {
+        "description": "The address prefixes of the vnet"
+      }
+    },
+    "ascAppSubnetAddressPrefixes": {
+      "type": "string",
+      "defaultValue": "10.4.0.0/24",
+      "metadata": {
+        "description": "The Azure Spring Cloud App subnet address prefixes in the vnet"
+      }
+    },
+    "ascRuntimeSubnetAddressPrefixes": {
+      "type": "string",
+      "defaultValue": "10.4.1.0/24",
+      "metadata": {
+        "description": "The Azure Spring Cloud Runtime subnet address prefixes in the vnet"
+      }
+    },
+    "bastionSubnetAddressPrefixes": {
+      "type": "string",
+      "defaultValue": "10.4.2.0/26",
+      "metadata": {
+        "description": "The bastion subnet address prefixes in the vnet"
+      }
+    },
+    "vmSubnetAddressPrefixes": {
+      "type": "string",
+      "defaultValue": "10.4.3.0/24",
+      "metadata": {
+        "description": "The virtual machine subnet address prefixes in the vnet"
+      }
+    },
+    "keyVaultName": {
+      "type": "string",
+      "defaultValue": "[format('{0}kv{1}{2}', parameters('appAlias'), toLower(parameters('environment')), uniqueString(parameters('location')))]",
+      "metadata": {
+        "description": "the name of the key vault"
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "defaultValue": "[take(format('{0}sa{1}{2}', parameters('appAlias'), toLower(parameters('environment')), uniqueString(parameters('location'))), 24)]",
+      "metadata": {
+        "description": "the name of the storage account"
+      }
+    },
+    "containerName": {
+      "type": "string",
+      "defaultValue": "container1",
+      "metadata": {
+        "description": "the name of the blob container"
+      }
+    },
+    "fileServiceName": {
+      "type": "string",
+      "defaultValue": "fileshare1",
+      "metadata": {
+        "description": "the name of the file share"
+      }
+    },
+    "queueServiceName": {
+      "type": "string",
+      "defaultValue": "queueservice1",
+      "metadata": {
+        "description": "the name of the queue service"
+      }
+    },
+    "tableServiceName": {
+      "type": "string",
+      "defaultValue": "tableservice1",
+      "metadata": {
+        "description": "the name of the table service"
+      }
+    },
+    "storageAccountPrimaryKeySecretName": {
+      "type": "string",
+      "defaultValue": "storage-account-primary-key",
+      "metadata": {
+        "description": "the secret name in the key vault for the storage account primary key "
+      }
+    },
+    "springCloudInstanceName": {
+      "type": "string",
+      "defaultValue": "[format('{0}asc{1}{2}', parameters('appAlias'), toLower(parameters('environment')), uniqueString(parameters('location')))]",
+      "metadata": {
+        "description": "The name of Azure Spring Cloud"
+      }
+    },
+    "appInsightsName": {
+      "type": "string",
+      "defaultValue": "[format('{0}ai{1}{2}', parameters('appAlias'), toLower(parameters('environment')), uniqueString(parameters('location')))]",
+      "metadata": {
+        "description": "The name of the Application Insights instance for Azure Spring Cloud"
+      }
+    },
+    "springCloudServiceCidrs": {
+      "type": "string",
+      "defaultValue": "10.1.0.0/16,10.2.0.0/16,10.3.0.1/16",
+      "metadata": {
+        "description": "Comma-separated list of IP address ranges in CIDR format. The IP ranges are reserved to host underlying Azure Spring Cloud infrastructure, which should be 3 at least /16 unused IP ranges, must not overlap with any Subnet IP ranges"
+      }
+    },
+    "logAnalyticsWorkspaceName": {
+      "type": "string",
+      "defaultValue": "[format('{0}la{1}{2}', parameters('appAlias'), toLower(parameters('environment')), uniqueString(parameters('location')))]",
+      "metadata": {
+        "description": "The name of log analytics that Azure Spring Cloud will use"
+      }
+    },
+    "clusterName": {
+      "type": "string",
+      "defaultValue": "[format('{0}aks{1}{2}', parameters('appAlias'), toLower(parameters('environment')), uniqueString(parameters('location')))]",
+      "metadata": {
+        "description": "The name of the Managed Cluster resource."
+      }
+    },
+    "linuxAdminUsername": {
+      "type": "string",
+      "defaultValue": "dev1",
+      "metadata": {
+        "description": "User name for the Linux Virtual Machines."
+      }
+    },
+    "sshRSAPublicKey": {
+      "type": "string",
+      "metadata": {
+        "description": "Configure all linux machines with the SSH RSA public key string. Your key should include three parts, for example 'ssh-rsa AAAAB...snip...UcyupgH azureuser@linuxvm'"
+      }
+    },
+    "dnsPrefix": {
+      "type": "string",
+      "defaultValue": "[parameters('appAlias')]",
+      "metadata": {
+        "description": "Optional DNS prefix to use with hosted Kubernetes API server FQDN."
+      }
+    },
+    "vmName": {
+      "type": "string",
+      "defaultValue": "[format('{0}vm1{1}{2}', parameters('appAlias'), toLower(parameters('environment')), uniqueString(parameters('location')))]",
+      "metadata": {
+        "description": "The name of you Virtual Machine."
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "Username for the Virtual Machine."
+      }
+    },
+    "adminPasswordOrKey": {
+      "type": "secureString",
+      "metadata": {
+        "description": "SSH Key or password for the Virtual Machine. SSH key is recommended."
+      }
+    },
+    "bastionHostName": {
+      "type": "string",
+      "defaultValue": "[format('{0}bastion{1}{2}', parameters('appAlias'), toLower(parameters('environment')), uniqueString(parameters('location')))]",
+      "metadata": {
+        "description": "The name of the Bastion host"
+      }
+    },
+    "publicIpName": {
+      "type": "string",
+      "defaultValue": "[format('{0}bastion{1}{2}', parameters('appAlias'), toLower(parameters('environment')), uniqueString(parameters('location')))]",
+      "metadata": {
+        "description": "The name of the Bastion public IP address"
+      }
+    }
+  },
+  "variables": {
+    "storageAccountSkuName": "[if(or(equals(parameters('environment'), 'OL'), equals(parameters('environment'), 'BK')), 'Standard_GRS', 'Standard_LRS')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "name": "[parameters('vnetName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "ascAppSubnetName": {
+            "value": "[parameters('ascAppSubnetName')]"
+          },
+          "ascRuntimeSubnetName": {
+            "value": "[parameters('ascRuntimeSubnetName')]"
+          },
+          "vnetName": {
+            "value": "[parameters('vnetName')]"
+          },
+          "vnetAddressPrefixes": {
+            "value": "[parameters('vnetAddressPrefixes')]"
+          },
+          "ascAppSubnetAddressPrefixes": {
+            "value": "[parameters('ascAppSubnetAddressPrefixes')]"
+          },
+          "ascRuntimeSubnetAddressPrefixes": {
+            "value": "[parameters('ascRuntimeSubnetAddressPrefixes')]"
+          },
+          "bastionSubnetAddressPrefixes": {
+            "value": "[parameters('bastionSubnetAddressPrefixes')]"
+          },
+          "bastionSubnetName": {
+            "value": "[parameters('bastionSubnetName')]"
+          },
+          "vmSubnetAddressPrefixes": {
+            "value": "[parameters('vmSubnetAddressPrefixes')]"
+          },
+          "vmSubnetName": {
+            "value": "[parameters('vmSubnetName')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.5.6.12127",
+              "templateHash": "16292078270947623814"
+            }
+          },
+          "parameters": {
+            "vnetName": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the Virtual Network"
+              }
+            },
+            "ascAppSubnetName": {
+              "type": "string",
+              "metadata": {
+                "description": "the app subnet name of the Azure Spring Cloud"
+              }
+            },
+            "ascRuntimeSubnetName": {
+              "type": "string",
+              "metadata": {
+                "description": "the runtime subnet name of the Azure Spring Cloud"
+              }
+            },
+            "bastionSubnetName": {
+              "type": "string",
+              "metadata": {
+                "description": "The bastion subnet name in the vnet"
+              }
+            },
+            "vmSubnetName": {
+              "type": "string",
+              "metadata": {
+                "description": "The virtual machine subnet name in the vnet"
+              }
+            },
+            "vnetAddressPrefixes": {
+              "type": "string",
+              "metadata": {
+                "description": "The address prefixes of the vnet"
+              }
+            },
+            "ascAppSubnetAddressPrefixes": {
+              "type": "string",
+              "metadata": {
+                "description": "The Azure Spring Cloud App subnet address prefixes in the vnet"
+              }
+            },
+            "ascRuntimeSubnetAddressPrefixes": {
+              "type": "string",
+              "metadata": {
+                "description": "The Azure Spring Cloud Runtime subnet address prefixes in the vnet"
+              }
+            },
+            "bastionSubnetAddressPrefixes": {
+              "type": "string",
+              "metadata": {
+                "description": "The bastion subnet address prefixes in the vnet"
+              }
+            },
+            "vmSubnetAddressPrefixes": {
+              "type": "string",
+              "metadata": {
+                "description": "The virtual machine subnet address prefixes in the vnet"
+              }
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "The location of the resource"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "metadata": {
+                "description": "The tags that will be associated to the Resources"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2019-11-01",
+              "name": "[parameters('vnetName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "[parameters('vnetAddressPrefixes')]"
+                  ]
+                },
+                "subnets": [
+                  {
+                    "name": "[parameters('ascAppSubnetName')]",
+                    "properties": {
+                      "addressPrefix": "[parameters('ascAppSubnetAddressPrefixes')]"
+                    }
+                  },
+                  {
+                    "name": "[parameters('ascRuntimeSubnetName')]",
+                    "properties": {
+                      "addressPrefix": "[parameters('ascRuntimeSubnetAddressPrefixes')]"
+                    }
+                  },
+                  {
+                    "name": "[parameters('bastionSubnetName')]",
+                    "properties": {
+                      "addressPrefix": "[parameters('bastionSubnetAddressPrefixes')]"
+                    }
+                  },
+                  {
+                    "name": "[parameters('vmSubnetName')]",
+                    "properties": {
+                      "addressPrefix": "[parameters('vmSubnetAddressPrefixes')]"
+                    }
+                  }
+                ]
+              },
+              "tags": "[parameters('tags')]"
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2020-10-01-preview",
+              "scope": "[format('Microsoft.Network/virtualNetworks/{0}', parameters('vnetName'))]",
+              "name": "[guid(resourceGroup().id)]",
+              "properties": {
+                "principalId": "d2531223-68f9-459e-b225-5592f90d145e",
+                "roleDefinitionId": "/subscriptions/50144203-25d7-4aa0-8c7b-3e0d936b07f0/providers/Microsoft.Authorization/roleDefinitions/8e3af657-a8ff-443c-a75c-2fe8c4bcb635"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "ascAppSubnetId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('ascAppSubnetName'))]"
+            },
+            "ascRuntimeSubetId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('ascRuntimeSubnetName'))]"
+            },
+            "bastionSubnetId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('bastionSubnetName'))]"
+            },
+            "vmSubnetId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('vmSubnetName'))]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "name": "[parameters('keyVaultName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "keyVaultName": {
+            "value": "[parameters('keyVaultName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.5.6.12127",
+              "templateHash": "8791606927708834618"
+            }
+          },
+          "parameters": {
+            "keyVaultName": {
+              "type": "string",
+              "metadata": {
+                "description": "the name of the key vault"
+              }
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "The location of the resource"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "metadata": {
+                "description": "The tags that will be associated to the Resources"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults",
+              "apiVersion": "2019-09-01",
+              "name": "[parameters('keyVaultName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "sku": {
+                  "family": "A",
+                  "name": "standard"
+                },
+                "tenantId": "[subscription().tenantId]",
+                "accessPolicies": [],
+                "enabledForTemplateDeployment": true
+              }
+            }
+          ],
+          "outputs": {
+            "vaultUri": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))).vaultUri]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "name": "[parameters('storageAccountName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          },
+          "storageAccountName": {
+            "value": "[parameters('storageAccountName')]"
+          },
+          "storageAccountSkuName": {
+            "value": "[variables('storageAccountSkuName')]"
+          },
+          "containerName": {
+            "value": "[parameters('containerName')]"
+          },
+          "fileServiceName": {
+            "value": "[parameters('fileServiceName')]"
+          },
+          "queueServiceName": {
+            "value": "[parameters('queueServiceName')]"
+          },
+          "tableServiceName": {
+            "value": "[parameters('tableServiceName')]"
+          },
+          "storageAccountPrimaryKeySecretName": {
+            "value": "[parameters('storageAccountPrimaryKeySecretName')]"
+          },
+          "keyVaultName": {
+            "value": "[parameters('keyVaultName')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.5.6.12127",
+              "templateHash": "11014497202285629523"
+            }
+          },
+          "parameters": {
+            "storageAccountName": {
+              "type": "string",
+              "metadata": {
+                "description": "the name of the storage account"
+              }
+            },
+            "storageAccountSkuName": {
+              "type": "string",
+              "metadata": {
+                "description": "the sku name of the storage account"
+              }
+            },
+            "containerName": {
+              "type": "string",
+              "metadata": {
+                "description": "the name of the blob container"
+              }
+            },
+            "fileServiceName": {
+              "type": "string",
+              "metadata": {
+                "description": "the name of the file share"
+              }
+            },
+            "queueServiceName": {
+              "type": "string",
+              "metadata": {
+                "description": "the name of the queue service"
+              }
+            },
+            "tableServiceName": {
+              "type": "string",
+              "metadata": {
+                "description": "the name of the table service"
+              }
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "The location of the resource"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "metadata": {
+                "description": "The tags that will be associated to the Resources"
+              }
+            },
+            "keyVaultName": {
+              "type": "string"
+            },
+            "storageAccountPrimaryKeySecretName": {
+              "type": "string",
+              "metadata": {
+                "description": "the secret name in the key vault for the storage account primary key "
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Storage/storageAccounts",
+              "apiVersion": "2021-08-01",
+              "name": "[parameters('storageAccountName')]",
+              "location": "[parameters('location')]",
+              "sku": {
+                "name": "[parameters('storageAccountSkuName')]"
+              },
+              "kind": "StorageV2",
+              "properties": {
+                "minimumTlsVersion": "TLS1_2",
+                "allowBlobPublicAccess": true,
+                "allowSharedKeyAccess": true,
+                "largeFileSharesState": "Enabled",
+                "networkAcls": {
+                  "resourceAccessRules": [],
+                  "bypass": "AzureServices",
+                  "virtualNetworkRules": [],
+                  "ipRules": [],
+                  "defaultAction": "Allow"
+                },
+                "supportsHttpsTrafficOnly": true,
+                "encryption": {
+                  "services": {
+                    "file": {
+                      "keyType": "Account",
+                      "enabled": true
+                    },
+                    "blob": {
+                      "keyType": "Account",
+                      "enabled": true
+                    }
+                  },
+                  "keySource": "Microsoft.Storage"
+                },
+                "accessTier": "Hot"
+              },
+              "tags": "[parameters('tags')]"
+            },
+            {
+              "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+              "apiVersion": "2021-08-01",
+              "name": "[format('{0}/default/{1}', parameters('storageAccountName'), parameters('containerName'))]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+              "apiVersion": "2021-08-01",
+              "name": "[format('{0}/default/{1}', parameters('storageAccountName'), parameters('fileServiceName'))]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Storage/storageAccounts/queueServices/queues",
+              "apiVersion": "2021-08-01",
+              "name": "[format('{0}/default/{1}', parameters('storageAccountName'), parameters('queueServiceName'))]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Storage/storageAccounts/tableServices/tables",
+              "apiVersion": "2021-08-01",
+              "name": "[format('{0}/default/{1}', parameters('storageAccountName'), parameters('tableServiceName'))]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2019-09-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), parameters('storageAccountPrimaryKeySecretName'))]",
+              "properties": {
+                "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2021-08-01').keys[0].value]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+              ]
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', parameters('keyVaultName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "name": "[parameters('logAnalyticsWorkspaceName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "logAnalyticsWorkspaceName": {
+            "value": "[parameters('logAnalyticsWorkspaceName')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.5.6.12127",
+              "templateHash": "3082652838413734303"
+            }
+          },
+          "parameters": {
+            "logAnalyticsWorkspaceName": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "The location of the resource"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "metadata": {
+                "description": "The tags that will be associated to the Resources"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2020-03-01-preview",
+              "name": "[parameters('logAnalyticsWorkspaceName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "retentionInDays": 30,
+                "features": {
+                  "searchVersion": 1
+                },
+                "sku": {
+                  "name": "PerGB2018"
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "id": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "name": "[parameters('springCloudInstanceName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "appInsightsName": {
+            "value": "[parameters('appInsightsName')]"
+          },
+          "laWorkspaceResourceId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', parameters('logAnalyticsWorkspaceName'))).outputs.id.value]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "springCloudAppSubnetID": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', parameters('vnetName'))).outputs.ascAppSubnetId.value]"
+          },
+          "springCloudInstanceName": {
+            "value": "[parameters('springCloudInstanceName')]"
+          },
+          "springCloudRuntimeSubnetID": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', parameters('vnetName'))).outputs.ascRuntimeSubetId.value]"
+          },
+          "springCloudServiceCidrs": {
+            "value": "[parameters('springCloudServiceCidrs')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.5.6.12127",
+              "templateHash": "9845447770775601039"
+            }
+          },
+          "parameters": {
+            "springCloudInstanceName": {
+              "type": "string",
+              "metadata": {
+                "description": "The instance name of the Azure Spring Cloud resource"
+              }
+            },
+            "appInsightsName": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the Application Insights instance for Azure Spring Cloud"
+              }
+            },
+            "laWorkspaceResourceId": {
+              "type": "string",
+              "metadata": {
+                "description": "The resource ID of the existing Log Analytics workspace. This will be used for both diagnostics logs and Application    Insights"
+              }
+            },
+            "springCloudAppSubnetID": {
+              "type": "string",
+              "metadata": {
+                "description": "The resourceID of the Azure Spring Cloud App Subnet"
+              }
+            },
+            "springCloudRuntimeSubnetID": {
+              "type": "string",
+              "metadata": {
+                "description": "The resourceID of the Azure Spring Cloud Runtime Subnet"
+              }
+            },
+            "springCloudServiceCidrs": {
+              "type": "string",
+              "metadata": {
+                "description": "Comma-separated list of IP address ranges in CIDR format. The IP ranges are reserved to host underlying Azure Spring Cloud    infrastructure, which should be 3 at least /16 unused IP ranges, must not overlap with any Subnet IP ranges"
+              }
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "The location of the resource"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "metadata": {
+                "description": "The tags that will be associated to the Resources"
+              }
+            }
+          },
+          "variables": {
+            "springCloudSkuName": "S0",
+            "springCloudSkuTier": "Standard"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Insights/components",
+              "apiVersion": "2020-02-02-preview",
+              "name": "[parameters('appInsightsName')]",
+              "location": "[parameters('location')]",
+              "kind": "web",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "Application_Type": "web",
+                "Flow_Type": "Bluefield",
+                "Request_Source": "rest",
+                "WorkspaceResourceId": "[parameters('laWorkspaceResourceId')]"
+              }
+            },
+            {
+              "type": "Microsoft.AppPlatform/Spring",
+              "apiVersion": "2020-07-01",
+              "name": "[parameters('springCloudInstanceName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "[variables('springCloudSkuName')]",
+                "tier": "[variables('springCloudSkuTier')]"
+              },
+              "properties": {
+                "networkProfile": {
+                  "serviceCidr": "[parameters('springCloudServiceCidrs')]",
+                  "serviceRuntimeSubnetId": "[parameters('springCloudRuntimeSubnetID')]",
+                  "appSubnetId": "[parameters('springCloudAppSubnetID')]"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.AppPlatform/Spring/monitoringSettings",
+              "apiVersion": "2020-07-01",
+              "name": "[format('{0}/default', parameters('springCloudInstanceName'))]",
+              "properties": {
+                "traceEnabled": true,
+                "appInsightsInstrumentationKey": "[reference(resourceId('Microsoft.Insights/components', parameters('appInsightsName'))).InstrumentationKey]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Insights/components', parameters('appInsightsName'))]",
+                "[resourceId('Microsoft.AppPlatform/Spring', parameters('springCloudInstanceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2017-05-01-preview",
+              "scope": "[format('Microsoft.AppPlatform/Spring/{0}', parameters('springCloudInstanceName'))]",
+              "name": "monitoring",
+              "properties": {
+                "workspaceId": "[parameters('laWorkspaceResourceId')]",
+                "logs": [
+                  {
+                    "category": "ApplicationConsole",
+                    "enabled": true,
+                    "retentionPolicy": {
+                      "days": 30,
+                      "enabled": false
+                    }
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.AppPlatform/Spring', parameters('springCloudInstanceName'))]"
+              ]
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', parameters('logAnalyticsWorkspaceName'))]",
+        "[resourceId('Microsoft.Resources/deployments', parameters('vnetName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "name": "[parameters('clusterName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "sshRSAPublicKey": {
+            "value": "[parameters('sshRSAPublicKey')]"
+          },
+          "linuxAdminUsername": {
+            "value": "[parameters('linuxAdminUsername')]"
+          },
+          "dnsPrefix": {
+            "value": "[parameters('dnsPrefix')]"
+          },
+          "clusterName": {
+            "value": "[parameters('clusterName')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.5.6.12127",
+              "templateHash": "3784047068409871893"
+            }
+          },
+          "parameters": {
+            "clusterName": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the Managed Cluster resource."
+              }
+            },
+            "dnsPrefix": {
+              "type": "string",
+              "metadata": {
+                "description": "Optional DNS prefix to use with hosted Kubernetes API server FQDN."
+              }
+            },
+            "osDiskSizeGB": {
+              "type": "int",
+              "defaultValue": 0,
+              "maxValue": 1023,
+              "minValue": 0,
+              "metadata": {
+                "description": "Disk size (in GB) to provision for each of the agent pool nodes. This value ranges from 0 to 1023. Specifying 0 will apply the default disk size for that agentVMSize."
+              }
+            },
+            "agentCount": {
+              "type": "int",
+              "defaultValue": 3,
+              "maxValue": 50,
+              "minValue": 1,
+              "metadata": {
+                "description": "The number of nodes for the cluster."
+              }
+            },
+            "agentVMSize": {
+              "type": "string",
+              "defaultValue": "Standard_D2s_v3",
+              "metadata": {
+                "description": "The size of the Virtual Machine."
+              }
+            },
+            "linuxAdminUsername": {
+              "type": "string",
+              "metadata": {
+                "description": "User name for the Linux Virtual Machines."
+              }
+            },
+            "sshRSAPublicKey": {
+              "type": "string",
+              "metadata": {
+                "description": "Configure all linux machines with the SSH RSA public key string. Your key should include three parts, for example 'ssh-rsa AAAAB...snip...UcyupgH azureuser@linuxvm'"
+              }
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "The location of the resource"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "metadata": {
+                "description": "The tags that will be associated to the Resources"
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.ContainerService/managedClusters",
+              "apiVersion": "2020-09-01",
+              "name": "[parameters('clusterName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "identity": {
+                "type": "SystemAssigned"
+              },
+              "properties": {
+                "dnsPrefix": "[parameters('dnsPrefix')]",
+                "agentPoolProfiles": [
+                  {
+                    "name": "agentpool",
+                    "osDiskSizeGB": "[parameters('osDiskSizeGB')]",
+                    "count": "[parameters('agentCount')]",
+                    "vmSize": "[parameters('agentVMSize')]",
+                    "osType": "Linux",
+                    "mode": "System"
+                  }
+                ],
+                "linuxProfile": {
+                  "adminUsername": "[parameters('linuxAdminUsername')]",
+                  "ssh": {
+                    "publicKeys": [
+                      {
+                        "keyData": "[parameters('sshRSAPublicKey')]"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ],
+          "outputs": {
+            "controlPlaneFQDN": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.ContainerService/managedClusters', parameters('clusterName'))).fqdn]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "name": "[parameters('vmName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          },
+          "vmName": {
+            "value": "[parameters('vmName')]"
+          },
+          "adminUsername": {
+            "value": "[parameters('adminUsername')]"
+          },
+          "adminPasswordOrKey": {
+            "value": "[parameters('adminPasswordOrKey')]"
+          },
+          "bastionSubnetId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', parameters('vnetName'))).outputs.bastionSubnetId.value]"
+          },
+          "vmSubnetId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', parameters('vnetName'))).outputs.vmSubnetId.value]"
+          },
+          "bastionHostName": {
+            "value": "[parameters('bastionHostName')]"
+          },
+          "publicIpName": {
+            "value": "[parameters('publicIpName')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.5.6.12127",
+              "templateHash": "14265224197536008365"
+            }
+          },
+          "parameters": {
+            "vmName": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of you Virtual Machine."
+              }
+            },
+            "adminUsername": {
+              "type": "string",
+              "metadata": {
+                "description": "Username for the Virtual Machine."
+              }
+            },
+            "authenticationType": {
+              "type": "string",
+              "defaultValue": "password",
+              "allowedValues": [
+                "sshPublicKey",
+                "password"
+              ],
+              "metadata": {
+                "description": "Type of authentication to use on the Virtual Machine. SSH key is recommended."
+              }
+            },
+            "adminPasswordOrKey": {
+              "type": "secureString",
+              "metadata": {
+                "description": "SSH Key or password for the Virtual Machine. SSH key is recommended."
+              }
+            },
+            "ubuntuOSVersion": {
+              "type": "string",
+              "defaultValue": "18.04-LTS",
+              "allowedValues": [
+                "14.04.5-LTS",
+                "16.04.0-LTS",
+                "18.04-LTS"
+              ],
+              "metadata": {
+                "description": "The Ubuntu version for the VM. This will pick a fully patched image of this given Ubuntu version."
+              }
+            },
+            "vmSize": {
+              "type": "string",
+              "defaultValue": "Standard_B2s",
+              "metadata": {
+                "description": "The size of the VM"
+              }
+            },
+            "vmSubnetId": {
+              "type": "string",
+              "metadata": {
+                "description": "The subnet id of the virtual machine"
+              }
+            },
+            "bastionSubnetId": {
+              "type": "string",
+              "metadata": {
+                "description": "The bastion subnet id"
+              }
+            },
+            "networkSecurityGroupName": {
+              "type": "string",
+              "defaultValue": "SecGroupNet",
+              "metadata": {
+                "description": "Name of the Network Security Group"
+              }
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "The location of the resource"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "metadata": {
+                "description": "The tags that will be associated to the Resources"
+              }
+            },
+            "publicIpName": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the Bastion public IP address"
+              }
+            },
+            "bastionHostName": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the Bastion host"
+              }
+            }
+          },
+          "variables": {
+            "networkInterfaceName": "[format('{0}NetInt', parameters('vmName'))]",
+            "osDiskType": "Standard_LRS",
+            "linuxConfiguration": {
+              "disablePasswordAuthentication": true,
+              "ssh": {
+                "publicKeys": [
+                  {
+                    "path": "[format('/home/{0}/.ssh/authorized_keys', parameters('adminUsername'))]",
+                    "keyData": "[parameters('adminPasswordOrKey')]"
+                  }
+                ]
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/networkInterfaces",
+              "apiVersion": "2021-05-01",
+              "name": "[variables('networkInterfaceName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "ipConfigurations": [
+                  {
+                    "name": "ipconfig1",
+                    "properties": {
+                      "subnet": {
+                        "id": "[parameters('vmSubnetId')]"
+                      },
+                      "privateIPAllocationMethod": "Dynamic"
+                    }
+                  }
+                ],
+                "networkSecurityGroup": {
+                  "id": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Network/networkSecurityGroups",
+              "apiVersion": "2021-05-01",
+              "name": "[parameters('networkSecurityGroupName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "securityRules": [
+                  {
+                    "name": "SSH",
+                    "properties": {
+                      "priority": 1000,
+                      "protocol": "Tcp",
+                      "access": "Allow",
+                      "direction": "Inbound",
+                      "sourceAddressPrefix": "*",
+                      "sourcePortRange": "*",
+                      "destinationAddressPrefix": "*",
+                      "destinationPortRange": "22"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Compute/virtualMachines",
+              "apiVersion": "2021-11-01",
+              "name": "[parameters('vmName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "hardwareProfile": {
+                  "vmSize": "[parameters('vmSize')]"
+                },
+                "storageProfile": {
+                  "osDisk": {
+                    "createOption": "FromImage",
+                    "managedDisk": {
+                      "storageAccountType": "[variables('osDiskType')]"
+                    }
+                  },
+                  "imageReference": {
+                    "publisher": "Canonical",
+                    "offer": "UbuntuServer",
+                    "sku": "[parameters('ubuntuOSVersion')]",
+                    "version": "latest"
+                  }
+                },
+                "networkProfile": {
+                  "networkInterfaces": [
+                    {
+                      "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"
+                    }
+                  ]
+                },
+                "osProfile": {
+                  "computerName": "[parameters('vmName')]",
+                  "adminUsername": "[parameters('adminUsername')]",
+                  "adminPassword": "[parameters('adminPasswordOrKey')]",
+                  "linuxConfiguration": "[if(equals(parameters('authenticationType'), 'password'), null(), variables('linuxConfiguration'))]"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2020-08-01",
+              "name": "[parameters('publicIpName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "sku": {
+                "name": "Standard"
+              },
+              "properties": {
+                "publicIPAllocationMethod": "Static"
+              }
+            },
+            {
+              "type": "Microsoft.Network/bastionHosts",
+              "apiVersion": "2021-03-01",
+              "name": "[parameters('bastionHostName')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "ipConfigurations": [
+                  {
+                    "name": "IpConf",
+                    "properties": {
+                      "subnet": {
+                        "id": "[parameters('bastionSubnetId')]"
+                      },
+                      "publicIPAddress": {
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIpName'))]"
+                      }
+                    }
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIpName'))]"
+              ]
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', parameters('vnetName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "controlPlaneFQDN": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Resources/deployments', parameters('clusterName'))).outputs.controlPlaneFQDN.value]"
+    }
+  }
+}
